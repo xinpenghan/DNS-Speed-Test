@@ -1,8 +1,8 @@
 <div align="center">
   
-<img alt="Vditor" src="https://xinpenghan.github.io/YD-YoutubeDownloader/image/logo-1.png" />
+<img alt="Vditor" src="https://xinpenghan.github.io/DNS-Speed-Test/image/logo.png" />
 <br>
-<h3>YoutubeDownloader</h3>
+<h3>DNS Speed Test</h3>
 
 <a title="MIT" target="_blank" href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/license-MIT-orange.svg?style=flat-square"></a>
 <br>
@@ -14,7 +14,7 @@
 
 <p>
 
-YD YoutubeDownloader is an application that can download YouTube videos. You can copy and paste the URL of any video, playlist, or channel and download it directly in your chosen format. It also supports the SOCKS5 protocol, a feature not found in other software.
+The software collects DNS addresses from around the world and supports speed testing for these global DNS addresses.
 
 </p>
 <br>
