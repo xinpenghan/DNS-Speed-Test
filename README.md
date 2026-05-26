@@ -14,7 +14,7 @@
 
 <p>
 
-The software collects DNS addresses from around the world and supports speed testing for these global DNS addresses.
+该软件收集来自世界各地的 DNS 地址，并支持对这些全球 DNS 地址进行测速。
 
 </p>
 <br>
