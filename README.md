@@ -34,5 +34,4 @@ The software collects DNS addresses from around the world and supports speed tes
 
 ## Screenshot
 
-<img alt="Vditor" src="https://xinpenghan.github.io/YD-YoutubeDownloader/image/6.png" />
-<img alt="Vditor" src="https://xinpenghan.github.io/YD-YoutubeDownloader/image/7.png" />
+<img alt="Vditor" src="https://xinpenghan.github.io/DNS-Speed-Test/image/1.png" />
