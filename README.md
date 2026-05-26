@@ -31,12 +31,6 @@ The software collects DNS addresses from around the world and supports speed tes
 
 <br>
 
-## Other GitHub projects included in the software
-   - 📦   <a href="https://github.com/yt-dlp/yt-dlp/">yt-dlp</a>
-   - 📦   <a href="https://github.com/FFmpeg/FFmpeg">FFmpeg</a>
-
-
-
 
 ## Screenshot
 
