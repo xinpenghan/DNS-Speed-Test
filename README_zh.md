@@ -1,12 +1,12 @@
 <div align="center">
   
-<img alt="Vditor" src="https://xinpenghan.github.io/YD-YoutubeDownloader/image/logo-1.png" />
+<img alt="Vditor" src="https://xinpenghan.github.io/DNS-Speed-Test/image/logo.png" />
 <br>
 <h3>YoutubeDownloader</h3>
 
 <a title="MIT" target="_blank" href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/license-MIT-orange.svg?style=flat-square"></a>
 <br>
-<a href="https://github.com/xinpenghan/YoutubeDownloader/blob/main/README_zh.md">中文</a> &nbsp;|&nbsp; <a href="https://github.com/xinpenghan/YoutubeDownloader/blob/main/README.md">English</a>
+<a href="https://github.com/xinpenghan/YoutubeDownloader/blob/main/README_zh.md">中文</a> &nbsp;|&nbsp; <a href="https://github.com/xinpenghan/DNS-Speed-Test/blob/main/README.md">English</a>
 </div>
 
 ## 💡 简介
