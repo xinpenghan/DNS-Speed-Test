@@ -27,7 +27,7 @@ This software collects DNS addresses from around the world and supports speed te
  <img alt="Vditor" src="https://xinpenghan.github.io/YD-YoutubeDownloader/image/paypal.png" width="200" />
 
 ## Download link
-   - 📦 **[stable version](https://github.com/xinpenghan/YoutubeDownloader/releases/)**
+   - 📦 **[stable version](https://github.com/xinpenghan/DNS-Speed-Test/releases/)**
 
 <br>
 

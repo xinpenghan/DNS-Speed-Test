@@ -26,7 +26,7 @@
 <img alt="Vditor" src="https://xinpenghan.github.io/YD-YoutubeDownloader/image/paypal.png" width="200" />
 
 ## 下载地址
-   - 📦 **[稳定版本](https://github.com/xinpenghan/YoutubeDownloader/releases/)**
+   - 📦 **[稳定版本](https://github.com/xinpenghan/DNS-Speed-Test/releases/)**
 
 <br>
 
