@@ -3,37 +3,46 @@ name: 🔐 Sign Release with Sigstore
 
 on:
   release:
-    types: [published]  # 仅当创建新 Release 时触发
+    types: [published]
 
-# 🔑 关键：授予 OIDC 令牌写入权限
 permissions:
-  id-token: write
-  contents: read
+  id-token: write    # 🔑 Sigstore OIDC 必需
+  contents: write    # ✍️ 允许上传签名文件到 Release
 
 jobs:
   sign-artifacts:
     name: Sign DNS_Speed_Test.exe
-    runs-on: windows-latest  # 您的程序是 Windows 可执行文件
+    runs-on: windows-latest
 
     steps:
-      # 1️⃣ 下载 Release 附件（包含待签名的 exe）
-      - name: Download Release Assets
-        uses: actions/download-release-asset@v2
-        with:
-          owner: ${{ github.repository_owner }}
-          repo: ${{ github.event.repository.name }}
-          tag: ${{ github.event.release.tag_name }}
-          asset-name: DNS_Speed_Test.exe
-          token: ${{ secrets.GITHUB_TOKEN }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      # 1️⃣ 检出代码（获取仓库上下文）
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      # 2️⃣ 安装 Sigstore cosign 工具
+      # 2️⃣ 安装 GitHub CLI (gh)
+      - name: Install GitHub CLI
+        run: |
+          winget install --id GitHub.cli --silent
+        shell: pwsh
+
+      # 3️⃣ 安装 Sigstore cosign
       - name: Install Cosign
         uses: sigstore/cosign-installer@v3.5.0
 
-      # 3️⃣ 对 exe 文件签名（生成 .sig + .crt）
-      - name: Sign executable with Sigstore
+      # 4️⃣ 下载 Release 中的 DNS_Speed_Test.exe
+      - name: Download executable from Release
+        run: |
+          gh release download ${{ github.event.release.tag_name }} `
+            --repo ${{ github.repository }} `
+            --pattern "DNS_Speed_Test.exe" `
+            --dir . `
+            --clobber
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: pwsh
+
+      # 5️⃣ 对 exe 签名
+      - name: Sign with Sigstore
         run: |
           cosign sign-blob `
             --output-signature DNS_Speed_Test.exe.sig `
@@ -42,19 +51,20 @@ jobs:
             DNS_Speed_Test.exe
         shell: pwsh
 
-      # 4️⃣ 将签名文件上传回 Release
-      - name: Upload Signatures to Release
-        uses: softprops/action-gh-release@v2
-        with:
-          files: |
-            DNS_Speed_Test.exe.sig
-            DNS_Speed_Test.exe.crt
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      # 5️⃣ 输出验证指引（方便用户查看）
-      - name: Print Verification Instructions
+      # 6️⃣ 上传签名文件到 Release
+      - name: Upload signatures to Release
         run: |
-          echo "✅ Signature completed!"
+          gh release upload ${{ github.event.release.tag_name }} `
+            DNS_Speed_Test.exe.sig DNS_Speed_Test.exe.crt `
+            --repo ${{ github.repository }} `
+            --clobber
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: pwsh
+
+      # 7️⃣ 输出验证指引
+      - name: Print verification guide
+        run: |
+          echo "✅ Signature successful!"
           echo "🔍 Verify with:"
-          echo "cosign verify-blob --certificate DNS_Speed_Test.exe.crt --signature DNS_Speed_Test.exe.sig --certificate-identity-regexp='^https://github.com/xinpenghan/DNS-Speed-Test/.github/workflows/sign-release.yml@refs/tags/.*' --certificate-oidc-issuer='https://token.actions.githubusercontent.com' DNS_Speed_Test.exe"
+          echo "cosign verify-blob --certificate DNS_Speed_Test.exe.crt --signature DNS_Speed_Test.exe.sig --certificate-identity-regexp '^https://github.com/xinpenghan/DNS-Speed-Test/.github/workflows/sign-release.yml@refs/tags/.*' --certificate-oidc-issuer 'https://token.actions.githubusercontent.com' DNS_Speed_Test.exe"
