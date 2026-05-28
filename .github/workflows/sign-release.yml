@@ -1,76 +1,49 @@
-# .github/workflows/sign-any-file.yml
-name: 🔐 Sign Any File with Sigstore
+name: 🔐 Attest Build Provenance
 
 on:
-  workflow_dispatch:  # ✅ 支持手动触发，无需等 Release
-    inputs:
-      file_name:
-        description: '要签名的文件名（如 DNS_Speed_Test.exe）'
-        required: true
-        default: 'DNS_Speed_Test.exe'
+  release:
+    types: [published]
+  workflow_dispatch:  # 支持手动触发测试
 
 permissions:
-  id-token: write
-  contents: write
+  id-token: write      # Sigstore OIDC
+  contents: read       # 读取代码
+  attestations: write  # ✨ 关键：写入证明
+  actions: read        # 读取构建上下文
 
 jobs:
-  sign:
+  attest:
+    name: Attest DNS_Speed_Test.exe
     runs-on: windows-latest
+
     steps:
-      - name: Install gh & cosign
-        run: |
-          winget install -e --id GitHub.cli --silent
-          winget install -e --id sigstore.cosign --silent
+      # 1️⃣ 下载 Release 中的 exe（与之前方案一致）
+      - name: Install GitHub CLI
+        run: winget install -e --id GitHub.cli --silent
         shell: pwsh
 
-      # 📤 关键：创建一个临时 Release 用于上传待签文件
-      - name: Create temp release
+      - name: Download executable
         run: |
-          $tag = "temp-sign-${{ github.run_id }}"
-          gh release create $tag --title "Temp Sign $tag" --notes "Auto-created for signing" --repo ${{ github.repository }}
+          gh release download ${{ github.event.release.tag_name || github.ref_name }} `
+            --repo ${{ github.repository }} `
+            --pattern "DNS_Speed_Test.exe" `
+            --dir . `
+            --clobber
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         shell: pwsh
 
-      # ⏳ 暂停 30 秒，等您手动上传文件（见下方操作指南）
-      - name: Wait for manual upload (30s)
-        run: Start-Sleep -Seconds 30
-        shell: pwsh
+      # 2️⃣ 生成构建证明（核心步骤）
+      - name: Generate build provenance attestation
+        uses: actions/attest@v4  # ✅ 官方推荐，替代 attest-build-provenance
+        with:
+          subject-path: 'DNS_Speed_Test.exe'  # 🎯 要证明的文件路径
 
-      # 📥 下载您刚刚上传的文件
-      - name: Download uploaded file
+      # 3️⃣ 输出验证指引
+      - name: Print verification guide
         run: |
-          $tag = "temp-sign-${{ github.run_id }}"
-          $file = "${{ github.event.inputs.file_name }}"
-          gh release download $tag --repo ${{ github.repository }} --pattern "$file" --dir . --clobber
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        shell: pwsh
-
-      # ✍️ 签名
-      - name: Sign with Sigstore
-        run: |
-          $file = "${{ github.event.inputs.file_name }}"
-          cosign sign-blob `
-            --output-signature "$file.sig" `
-            --output-certificate "$file.crt" `
-            --oidc-issuer https://token.actions.githubusercontent.com `
-            "$file"
-        shell: pwsh
-
-      # 📤 上传签名结果
-      - name: Upload signatures to same release
-        run: |
-          $tag = "temp-sign-${{ github.run_id }}"
-          $file = "${{ github.event.inputs.file_name }}"
-          gh release upload $tag "$file.sig" "$file.crt" --repo ${{ github.repository }} --clobber
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        shell: pwsh
-
-      # 📝 输出指引
-      - name: Print instructions
-        run: |
-          echo "✅ 签名完成！"
-          echo "🔗 下载链接: https://github.com/${{ github.repository }}/releases/tag/temp-sign-${{ github.run_id }}"
-          echo "🔍 验证命令: cosign verify-blob --certificate ${{ github.event.inputs.file_name }}.crt --signature ${{ github.event.inputs.file_name }}.sig --certificate-identity-regexp '^https://github.com/${{ github.repository }}/.github/workflows/sign-any-file.yml@.*' --certificate-oidc-issuer 'https://token.actions.githubusercontent.com' ${{ github.event.inputs.file_name }}"
+          echo "✅ Attestation uploaded to GitHub!"
+          echo "🔍 Verify with GitHub CLI:"
+          echo "gh attestation verify DNS_Speed_Test.exe -R ${{ github.repository }}"
+          echo ""
+          echo "🌐 View in browser: https://github.com/${{ github.repository }}/attestations"
