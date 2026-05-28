@@ -1,49 +1,59 @@
-name: 🔐 Attest Build Provenance
+# .github/workflows/sign-and-attest.yml
+name: 🔐 Sign + Attest Release
 
 on:
-  release:
-    types: [published]
-  workflow_dispatch:  # 支持手动触发测试
+  release: { types: [published] }
 
 permissions:
-  id-token: write      # Sigstore OIDC
-  contents: read       # 读取代码
-  attestations: write  # ✨ 关键：写入证明
-  actions: read        # 读取构建上下文
+  id-token: write
+  contents: write
+  attestations: write
 
 jobs:
-  attest:
-    name: Attest DNS_Speed_Test.exe
+  sign-and-attest:
     runs-on: windows-latest
-
     steps:
-      # 1️⃣ 下载 Release 中的 exe（与之前方案一致）
-      - name: Install GitHub CLI
-        run: winget install -e --id GitHub.cli --silent
+      - name: Install tools
+        run: |
+          winget install -e --id GitHub.cli --silent
+          winget install -e --id sigstore.cosign --silent
         shell: pwsh
 
       - name: Download executable
         run: |
-          gh release download ${{ github.event.release.tag_name || github.ref_name }} `
+          gh release download ${{ github.event.release.tag_name }} `
             --repo ${{ github.repository }} `
-            --pattern "DNS_Speed_Test.exe" `
-            --dir . `
-            --clobber
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+            --pattern "DNS_Speed_Test.exe" --dir . --clobber
+        env: { GH_TOKEN: ${{ secrets.GITHUB_TOKEN }} }
         shell: pwsh
 
-      # 2️⃣ 生成构建证明（核心步骤）
-      - name: Generate build provenance attestation
-        uses: actions/attest@v4  # ✅ 官方推荐，替代 attest-build-provenance
-        with:
-          subject-path: 'DNS_Speed_Test.exe'  # 🎯 要证明的文件路径
-
-      # 3️⃣ 输出验证指引
-      - name: Print verification guide
+      # 🔹 步骤 A：生成可下载的 .sig/.crt（用户友好）
+      - name: Sign with Sigstore (for users)
         run: |
-          echo "✅ Attestation uploaded to GitHub!"
-          echo "🔍 Verify with GitHub CLI:"
-          echo "gh attestation verify DNS_Speed_Test.exe -R ${{ github.repository }}"
-          echo ""
-          echo "🌐 View in browser: https://github.com/${{ github.repository }}/attestations"
+          cosign sign-blob `
+            --output-signature DNS_Speed_Test.exe.sig `
+            --output-certificate DNS_Speed_Test.exe.crt `
+            --oidc-issuer https://token.actions.githubusercontent.com `
+            DNS_Speed_Test.exe
+        shell: pwsh
+
+      # 🔹 步骤 B：生成构建证明（供应链审计）
+      - name: Attest build provenance (for auditors)
+        uses: actions/attest@v4
+        with:
+          subject-path: 'DNS_Speed_Test.exe'
+
+      # 🔹 步骤 C：上传所有产物
+      - name: Upload all artifacts
+        run: |
+          gh release upload ${{ github.event.release.tag_name }} `
+            DNS_Speed_Test.exe.sig DNS_Speed_Test.exe.crt `
+            --repo ${{ github.repository }} --clobber
+        env: { GH_TOKEN: ${{ secrets.GITHUB_TOKEN }} }
+        shell: pwsh
+
+      - name: Summary
+        run: |
+          echo "✅ 完成！"
+          echo "📦 用户可下载: .exe + .sig + .crt → 用 cosign 验证"
+          echo "🔍 审计者可运行: gh attestation verify DNS_Speed_Test.exe -R ${{ github.repository }}"
